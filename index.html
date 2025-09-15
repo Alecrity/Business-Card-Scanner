@@ -546,17 +546,28 @@
             showLoading();
 
             try {
-                // Create FormData instead of JSON
-                const formData = new FormData();
-                formData.append('requestId', requestId);
-                formData.append('timestamp', new Date().toISOString());
-                formData.append('image', selectedFile, 'business_card.jpg');
-                formData.append('source', 'business_card_scanner');
+                // Compress image to base64 (same as truck parts app)
+                const compressedBase64 = await resizeImageToBase64(selectedFile);
 
-                // Send to Make.com webhook
+                // Prepare the JSON data (same structure as truck parts app)
+                const formData = {
+                    requestId: requestId,
+                    timestamp: new Date().toISOString(),
+                    hasImage: true,
+                    image: compressedBase64, // Full data:image/jpeg;base64,... string
+                    originalFilesize: selectedFile.size,
+                    filename: selectedFile.name || 'business_card.jpg',
+                    filetype: selectedFile.type,
+                    source: 'business_card_scanner'
+                };
+
+                // Send JSON data (same method as truck parts app)
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
-                    body: formData  // Send as FormData, not JSON
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
                 });
 
                 if (response.ok) {
