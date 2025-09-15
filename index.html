@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Card Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            padding: 40px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: #ffffff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .logo::before {
+            content: '';
+            width: 32px;
+            height: 24px;
+            background: #000;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 2px;
+            background: #fff;
+            box-shadow: 0 -6px 0 #fff, 0 6px 0 #fff;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.95em;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        .upload-section {
+            margin: 30px 0;
+        }
+
+        .camera-area {
+            border: 2px dashed #444;
+            border-radius: 8px;
+            padding: 50px 20px;
+            margin: 30px 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #111;
+            position: relative;
+        }
+
+        .camera-area:hover {
+            border-color: #666;
+            background: #181818;
+        }
+
+        .camera-area.dragover {
+            border-color: #fff;
+            background: #222;
+        }
+
+        .camera-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 20px;
+            background: #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .camera-icon::before {
+            content: '';
+            width: 24px;
+            height: 18px;
+            background: #666;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .camera-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 14px;
+            height: 14px;
+            border: 2px solid #999;
+            border-radius: 50%;
+        }
+
+        .upload-text {
+            color: #fff;
+            font-size: 1.1em;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .upload-subtext {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .preview-container {
+            margin: 20px 0;
+            display: none;
+            position: relative;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            object-fit: contain;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #000;
+            color: white;
+            border: 2px solid #333;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .remove-btn:hover {
+            background: #333;
+            border-color: #555;
+        }
+
+        .scan-btn {
+            background: #ffffff;
+            color: #000;
+            border: none;
+            padding: 18px 36px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin: 30px 0 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .scan-btn:hover:not(:disabled) {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+        }
+
+        .scan-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #4a5568;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        .success-message {
+            background: #f0fff4;
+            border: 2px solid #68d391;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #2f855a;
+            display: none;
+        }
+
+        .success-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            border: 2px solid #fc8181;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #c53030;
+            display: none;
+        }
+
+        .try-again-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .try-again-btn:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+
+        .tips {
+            background: #edf2f7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .tips-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .tips-list {
+            color: #4a5568;
+            font-size: 0.8em;
+            line-height: 1.4;
+        }
+
+        .tips-list li {
+            margin-bottom: 4px;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .camera-area {
+                padding: 30px 15px;
+            }
+            
+            .scan-btn {
+                padding: 14px 28px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo"></div>
+            <h1>Business Card Scanner</h1>
+            <p class="subtitle">Capture and extract contact information instantly</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="camera-area" id="cameraArea">
+                <div class="camera-icon"></div>
+                <div class="upload-text">
+                    Take Photo or Upload Image
+                </div>
+                <div class="upload-subtext">
+                    Tap here to capture or select business card
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept="image/*" capture="environment">
+            </div>
+
+            <div class="preview-container" id="previewContainer">
+                <img id="previewImage" class="preview-image" alt="Business card preview">
+                <button id="removeBtn" class="remove-btn" title="Remove image">×</button>
+            </div>
+
+            <button id="scanBtn" class="scan-btn">Scan Business Card</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">Processing your business card...</div>
+        </div>
+
+        <div class="success-message" id="successMessage">
+            <div class="success-icon">✓</div>
+            <div><strong>Success!</strong></div>
+            <div>Business card has been processed and sent for data extraction.</div>
+        </div>
+
+        <div class="error-message" id="errorMessage">
+            <div><strong>Oops!</strong></div>
+            <div id="errorText">Something went wrong. Please try again.</div>
+            <button id="tryAgainBtn" class="try-again-btn">Try Again</button>
+        </div>
+
+        <div class="tips">
+            <div class="tips-title">Tips</div>
+            <ul class="tips-list">
+                <li>Ensure good lighting when taking the photo</li>
+                <li>Keep the business card flat and fully visible</li>
+                <li>Avoid shadows or glare on the card</li>
+                <li>Make sure all text is clearly readable</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        
+        // Make.com webhook URL
+        const WEBHOOK_URL = 'https://hook.us2.make.com/ym6xnmt71zwirb1j5s7kvndcwh5hyhle';
+
+        // DOM elements
+        const cameraArea = document.getElementById('cameraArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const removeBtn = document.getElementById('removeBtn');
+        const scanBtn = document.getElementById('scanBtn');
+        const loading = document.getElementById('loading');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const tryAgainBtn = document.getElementById('tryAgainBtn');
+
+        // Helper function for image compression
+        function resizeImageToBase64(file, maxWidth = 800, maxHeight = 600, quality = 0.8) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = () => {
+                    // Calculate new dimensions while maintaining aspect ratio
+                    let { width, height } = img;
+                    
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width = (width * maxHeight) / height;
+                            height = maxHeight;
+                        }
+                    }
+                    
+                    // Set canvas dimensions
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Draw and compress image
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                    resolve(compressedBase64);
+                };
+                
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        // Camera area click handler
+        cameraArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change handler
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop handlers
+        cameraArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            cameraArea.classList.add('dragover');
+        });
+
+        cameraArea.addEventListener('dragleave', () => {
+            cameraArea.classList.remove('dragover');
+        });
+
+        cameraArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            cameraArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // Scan button handler
+        scanBtn.addEventListener('click', scanBusinessCard);
+
+        // Remove image button handler
+        removeBtn.addEventListener('click', removeImage);
+
+        // Try again button handler
+        tryAgainBtn.addEventListener('click', resetApp);
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file (JPG, PNG, etc.)');
+                return;
+            }
+
+            // Validate file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showError('Image too large. Please use a smaller image (under 10MB).');
+                return;
+            }
+
+            selectedFile = file;
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+                hideMessages();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            selectedFile = null;
+            fileInput.value = '';
+            previewContainer.style.display = 'none';
+            previewImage.src = '';
+            hideMessages();
+        }
+
+        async function scanBusinessCard() {
+            // Check if we have an image
+            if (!selectedFile) {
+                showError('Please take a photo or upload a business card image first.');
+                return;
+            }
+
+            // Generate unique request ID
+            const requestId = 'card_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+            // Show loading state
+            showLoading();
+
+            try {
+                // Compress image to base64
+                const compressedBase64 = await resizeImageToBase64(selectedFile);
+
+                // Prepare the JSON data
+                const formData = {
+                    requestId: requestId,
+                    timestamp: new Date().toISOString(),
+                    image: compressedBase64,
+                    originalFilesize: selectedFile.size,
+                    filename: selectedFile.name || 'business_card.jpg',
+                    filetype: selectedFile.type,
+                    userAgent: navigator.userAgent,
+                    source: 'business_card_scanner'
+                };
+
+                // Send to Make.com webhook
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    showSuccess();
+                    // Clear the image after successful upload
+                    setTimeout(() => {
+                        removeImage();
+                    }, 2000);
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(`Failed to process business card: ${error.message}`);
+            }
+        }
+
+        function showLoading() {
+            hideMessages();
+            loading.style.display = 'block';
+            scanBtn.disabled = true;
+        }
+
+        function showSuccess() {
+            hideMessages();
+            successMessage.style.display = 'block';
+            scanBtn.disabled = false;
+        }
+
+        function showError(message) {
+            hideMessages();
+            errorText.textContent = message;
+            errorMessage.style.display = 'block';
+            scanBtn.disabled = false;
+        }
+
+        function hideMessages() {
+            loading.style.display = 'none';
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+        }
+
+        function resetApp() {
+            hideMessages();
+            removeImage();
+        }
+
+        // Prevent zoom on double tap (iOS)
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>
