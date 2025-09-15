@@ -546,28 +546,17 @@
             showLoading();
 
             try {
-                // Compress image to base64
-                const compressedBase64 = await resizeImageToBase64(selectedFile);
-
-                // Prepare the JSON data
-                const formData = {
-                    requestId: requestId,
-                    timestamp: new Date().toISOString(),
-                    image: compressedBase64,
-                    originalFilesize: selectedFile.size,
-                    filename: selectedFile.name || 'business_card.jpg',
-                    filetype: selectedFile.type,
-                    userAgent: navigator.userAgent,
-                    source: 'business_card_scanner'
-                };
+                // Create FormData instead of JSON
+                const formData = new FormData();
+                formData.append('requestId', requestId);
+                formData.append('timestamp', new Date().toISOString());
+                formData.append('image', selectedFile, 'business_card.jpg');
+                formData.append('source', 'business_card_scanner');
 
                 // Send to Make.com webhook
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
+                    body: formData  // Send as FormData, not JSON
                 });
 
                 if (response.ok) {
